@@ -1,16 +1,19 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../../store/gameStore';
 import { Trophy, Target, TrendingUp, Zap } from 'lucide-react';
 import ScoreChart, { getPlayerColor } from '../charts/ScoreChart';
 import RoundPerformanceChart from '../charts/RoundPerformanceChart';
 import StatCard from '../ui/StatCard';
+import { ExitGameDialog, ExitGameButton } from '../ui/ExitGameDialog';
 
 export default function Scoreboard() {
     const navigate = useNavigate();
     const game = useGameStore(state => state.game);
     const nextRound = useGameStore(state => state.nextRound);
     const getLeader = useGameStore(state => state.getLeader);
+
+    const [showExitDialog, setShowExitDialog] = useState(false);
 
     useEffect(() => {
         if (!game) {
@@ -80,6 +83,11 @@ export default function Scoreboard() {
     return (
         <div className="min-h-screen bg-gray-900 p-4">
             <div className="max-w-6xl mx-auto">
+                {/* Exit button - top right */}
+                <div className="flex justify-end mb-2">
+                    <ExitGameButton onPress={() => setShowExitDialog(true)} />
+                </div>
+
                 {/* Header */}
                 <div className="text-center mb-4 md:mb-6 animate-fade-in">
                     <h2 className="text-xl md:text-3xl font-bold mb-1 md:mb-2">
@@ -240,6 +248,12 @@ export default function Scoreboard() {
                         ? '🏆 VIEW FINAL RESULTS'
                         : `▶️ NEXT ROUND (${game.currentRound + 1})`}
                 </button>
+
+                {/* Exit Game Dialog */}
+                <ExitGameDialog
+                    isOpen={showExitDialog}
+                    onClose={() => setShowExitDialog(false)}
+                />
             </div>
         </div>
     );

@@ -4,6 +4,7 @@ import { useGameStore } from '../../store/gameStore';
 import { getSuitSymbol, getSuitColorClass, validateBids, getBiddingOrder, getCardsDealt, getTrumpSuit } from '../../lib/game-logic';
 import type { PlayerBid } from '../../types/game';
 import { X, Sparkles, Check, ChevronRight, Crown } from 'lucide-react';
+import { ExitGameDialog, ExitGameButton } from '../ui/ExitGameDialog';
 
 interface BidDialogProps {
     playerName: string;
@@ -78,6 +79,7 @@ export default function BiddingScreen() {
     const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
     const [error, setError] = useState('');
     const [biddingOrder, setBiddingOrder] = useState<number[]>([]);
+    const [showExitDialog, setShowExitDialog] = useState(false);
 
     useEffect(() => {
         if (!game) {
@@ -188,6 +190,11 @@ export default function BiddingScreen() {
     return (
         <div className="min-h-screen p-4 safe-bottom">
             <div className="max-w-lg mx-auto">
+                {/* Exit button - top right */}
+                <div className="flex justify-end mb-2">
+                    <ExitGameButton onPress={() => setShowExitDialog(true)} />
+                </div>
+
                 {/* Header - Round info */}
                 <div className="text-center mb-6 animate-fade-in">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-3">
@@ -325,6 +332,12 @@ export default function BiddingScreen() {
                     onClose={() => setSelectedPlayerId(null)}
                 />
             )}
+
+            {/* Exit Game Dialog */}
+            <ExitGameDialog
+                isOpen={showExitDialog}
+                onClose={() => setShowExitDialog(false)}
+            />
         </div>
     );
 }

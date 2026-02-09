@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../../store/gameStore';
 import { validateTricksTotal, calculateScore } from '../../lib/game-logic';
 import type { PlayerResult } from '../../types/game';
+import { ExitGameDialog, ExitGameButton } from '../ui/ExitGameDialog';
 
 export default function TricksEntry() {
     const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function TricksEntry() {
 
     const [tricks, setTricks] = useState<Map<string, number>>(new Map());
     const [error, setError] = useState('');
+    const [showExitDialog, setShowExitDialog] = useState(false);
 
     useEffect(() => {
         if (!game) {
@@ -68,6 +70,11 @@ export default function TricksEntry() {
     return (
         <div className="min-h-screen bg-gray-900 p-4">
             <div className="max-w-4xl mx-auto">
+                {/* Exit button - top right */}
+                <div className="flex justify-end mb-2">
+                    <ExitGameButton onPress={() => setShowExitDialog(true)} />
+                </div>
+
                 <div className="text-center mb-4 md:mb-8 animate-fade-in">
                     <h2 className="text-xl md:text-3xl font-bold mb-1 md:mb-2">
                         Enter Tricks Won
@@ -158,6 +165,12 @@ export default function TricksEntry() {
                         </button>
                     </div>
                 </div>
+
+                {/* Exit Game Dialog */}
+                <ExitGameDialog
+                    isOpen={showExitDialog}
+                    onClose={() => setShowExitDialog(false)}
+                />
             </div>
         </div>
     );
