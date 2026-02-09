@@ -59,8 +59,8 @@ export default function RoundPerformanceChart({
                                 borderRadius: '8px',
                                 color: '#F9FAFB',
                             }}
-                            formatter={(value: number, name: string) => [
-                                value,
+                            formatter={(value: any, name: any) => [
+                                value ?? 0,
                                 name === 'predicted' ? 'Predicted' : 'Actual'
                             ]}
                         />

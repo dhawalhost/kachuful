@@ -26,7 +26,7 @@ export default function Scoreboard() {
 
     // Prepare chart data - cumulative scores per round
     const scoreChartData = game.rounds.map((_round, roundIndex) => {
-        const dataPoint: Record<string, number | string> = { round: roundIndex + 1 };
+        const dataPoint: { round: number;[playerName: string]: number | string } = { round: roundIndex + 1 };
         game.players.forEach(player => {
             // Calculate cumulative score up to this round
             let cumulativeScore = 0;

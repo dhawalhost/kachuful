@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../../store/gameStore';
 import { useHistoryStore } from '../../store/historyStore';
-import { Trophy, RotateCcw, Home, Target, TrendingUp, Zap, Award, Crown, Sparkles, Play, Plus } from 'lucide-react';
+import { Trophy, RotateCcw, Home, Target, TrendingUp, Zap, Award, Crown, Sparkles, Plus } from 'lucide-react';
 import ScoreChart, { getPlayerColor } from '../charts/ScoreChart';
 
 export default function FinalResults() {
@@ -36,8 +36,8 @@ export default function FinalResults() {
     const winner = sortedPlayers[0];
 
     // Prepare full game chart data
-    const scoreChartData = game.rounds.map((round, roundIndex) => {
-        const dataPoint: Record<string, number | string> = { round: roundIndex + 1 };
+    const scoreChartData = game.rounds.map((_round, roundIndex) => {
+        const dataPoint: { round: number;[playerName: string]: number | string } = { round: roundIndex + 1 };
         game.players.forEach(player => {
             let cumulativeScore = 0;
             for (let i = 0; i <= roundIndex; i++) {

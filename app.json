@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "7f2da6e9-094e-4466-80c7-110d2be2f81e"
+      }
+    },
+    "android": {
+      "package": "com.dhawaldyavanpalli.kachufultemp"
+    }
+  }
+}

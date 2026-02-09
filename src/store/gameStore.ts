@@ -16,7 +16,6 @@ import {
     calculateScore,
     getTrumpSuit,
     getCardsDealt,
-    getDealerIndex,
 } from '../lib/game-logic';
 
 interface GameStore {
