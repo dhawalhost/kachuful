@@ -1,0 +1,627 @@
+# Kachuful Game State - Data Schema
+
+> **Purpose:** Complete JSON schema for game state management  
+> **Version:** 1.0  
+> **Storage:** LocalStorage / IndexedDB
+
+---
+
+## Complete Game State Schema
+
+```typescript
+interface GameState {
+  // Metadata
+  gameId: string;              // UUID
+  createdAt: string;           // ISO 8601 timestamp
+  updatedAt: string;           // ISO 8601 timestamp
+  status: GameStatus;          // "setup" | "in_progress" | "completed"
+  
+  // Configuration
+  settings: GameSettings;
+  
+  // Players
+  players: Player[];
+  
+  // Game Progress
+  currentRound: number;        // 1-indexed
+  dealerIndex: number;         // Current dealer (0-indexed player array)
+  
+  // Rounds
+  rounds: Round[];             // History of all rounds
+  
+  // Statistics (computed)
+  stats?: GameStatistics;
+}
+
+// ============================================
+// Enums & Types
+// ============================================
+
+type GameStatus = "setup" | "in_progress" | "completed";
+
+type ScoringVariant = 
+  | "10_plus_predicted"      // Standard: 10 + predicted if match
+  | "high_incentive"         // ((predicted + 1) × 10) + predicted
+  | "medium_incentive"       // 10 × predicted
+  | "point_per_trick";       // 1 per trick + 10 bonus
+
+type TrumpSuit = "spades" | "diamonds" | "clubs" | "hearts" | "none";
+
+type RoundStatus = "pending" | "bidding" | "playing" | "completed";
+
+// ============================================
+// Game Settings
+// ============================================
+
+interface GameSettings {
+  scoringVariant: ScoringVariant;
+  startingCards: number;       // Default: 7
+  totalRounds: number;         // Default: 13
+  roundPattern: RoundPattern;  // "down_up" | "down_only"
+  trumpPattern: TrumpPattern;  // "rotating" | "fixed" | "random"
+  dealerRestriction: boolean;  // Default: true
+}
+
+type RoundPattern = "down_up" | "down_only";
+type TrumpPattern = "rotating" | "fixed" | "random";
+
+// ============================================
+// Player
+// ============================================
+
+interface Player {
+  id: string;                  // UUID
+  name: string;                // Display name
+  position: number;            // Seating order (0-indexed)
+  totalScore: number;          // Cumulative score across all rounds
+  stats: PlayerStats;
+}
+
+interface PlayerStats {
+  roundsPlayed: number;
+  successfulBids: number;      // Correct predictions
+  failedBids: number;          // Incorrect predictions
+  totalTricksWon: number;
+  zeroBidsWon: number;         // Times predicted 0 and succeeded
+  maxRoundScore: number;       // Highest single round score
+  averageScore: number;        // Average per round
+}
+
+// ============================================
+// Round
+// ============================================
+
+interface Round {
+  number: number;              // 1-indexed
+  status: RoundStatus;
+  cardsDealt: number;
+  trumpSuit: TrumpSuit;
+  dealerIndex: number;         // Who dealt this round
+  
+  // Bidding phase
+  bids: PlayerBid[];
+  
+  // Playing phase
+  results: PlayerResult[];
+  
+  // Computed
+  scores: PlayerScore[];
+}
+
+interface PlayerBid {
+  playerId: string;
+  predicted: number;           // 0 to cardsDealt
+  timestamp?: string;          // When bid was made
+}
+
+interface PlayerResult {
+  playerId: string;
+  predicted: number;           // Their bid
+  actual: number;              // Tricks actually won
+  matched: boolean;            // predicted === actual
+}
+
+interface PlayerScore {
+  playerId: string;
+  roundScore: number;          // Points earned this round
+  cumulativeScore: number;     // Total score up to this round
+}
+
+// ============================================
+// Game Statistics
+// ============================================
+
+interface GameStatistics {
+  totalRoundsPlayed: number;
+  currentLeader: string;       // Player ID
+  mostAccuratePlayer: string;  // Player ID (highest bid success rate)
+  highestRoundScore: {
+    playerId: string;
+    round: number;
+    score: number;
+  };
+  
+  // Distribution
+  bidAccuracyRate: number;     // Overall % of successful bids
+  averageScorePerRound: number;
+}
+```
+
+---
+
+## Example: Complete Game State
+
+```json
+{
+  "gameId": "550e8400-e29b-41d4-a716-446655440000",
+  "createdAt": "2026-02-08T14:30:00Z",
+  "updatedAt": "2026-02-08T15:15:00Z",
+  "status": "in_progress",
+  
+  "settings": {
+    "scoringVariant": "10_plus_predicted",
+    "startingCards": 7,
+    "totalRounds": 13,
+    "roundPattern": "down_up",
+    "trumpPattern": "rotating",
+    "dealerRestriction": true
+  },
+  
+  "players": [
+    {
+      "id": "p1",
+      "name": "Rahul",
+      "position": 0,
+      "totalScore": 35,
+      "stats": {
+        "roundsPlayed": 3,
+        "successfulBids": 2,
+        "failedBids": 1,
+        "totalTricksWon": 8,
+        "zeroBidsWon": 0,
+        "maxRoundScore": 17,
+        "averageScore": 11.67
+      }
+    },
+    {
+      "id": "p2",
+      "name": "Priya",
+      "position": 1,
+      "totalScore": 32,
+      "stats": {
+        "roundsPlayed": 3,
+        "successfulBids": 3,
+        "failedBids": 0,
+        "totalTricksWon": 7,
+        "zeroBidsWon": 1,
+        "maxRoundScore": 13,
+        "averageScore": 10.67
+      }
+    },
+    {
+      "id": "p3",
+      "name": "Anjali",
+      "position": 2,
+      "totalScore": 23,
+      "stats": {
+        "roundsPlayed": 3,
+        "successfulBids": 1,
+        "failedBids": 2,
+        "totalTricksWon": 9,
+        "zeroBidsWon": 0,
+        "maxRoundScore": 13,
+        "averageScore": 7.67
+      }
+    },
+    {
+      "id": "p4",
+      "name": "Vikram",
+      "position": 3,
+      "totalScore": 20,
+      "stats": {
+        "roundsPlayed": 3,
+        "successfulBids": 2,
+        "failedBids": 1,
+        "totalTricksWon": 4,
+        "zeroBidsWon": 1,
+        "maxRoundScore": 10,
+        "averageScore": 6.67
+      }
+    }
+  ],
+  
+  "currentRound": 4,
+  "dealerIndex": 3,
+  
+  "rounds": [
+    {
+      "number": 1,
+      "status": "completed",
+      "cardsDealt": 7,
+      "trumpSuit": "spades",
+      "dealerIndex": 0,
+      "bids": [
+        { "playerId": "p1", "predicted": 3 },
+        { "playerId": "p2", "predicted": 2 },
+        { "playerId": "p3", "predicted": 1 },
+        { "playerId": "p4", "predicted": 0 }
+      ],
+      "results": [
+        { "playerId": "p1", "predicted": 3, "actual": 3, "matched": true },
+        { "playerId": "p2", "predicted": 2, "actual": 2, "matched": true },
+        { "playerId": "p3", "predicted": 1, "actual": 2, "matched": false },
+        { "playerId": "p4", "predicted": 0, "actual": 0, "matched": true }
+      ],
+      "scores": [
+        { "playerId": "p1", "roundScore": 13, "cumulativeScore": 13 },
+        { "playerId": "p2", "roundScore": 12, "cumulativeScore": 12 },
+        { "playerId": "p3", "roundScore": 0, "cumulativeScore": 0 },
+        { "playerId": "p4", "roundScore": 10, "cumulativeScore": 10 }
+      ]
+    },
+    {
+      "number": 2,
+      "status": "completed",
+      "cardsDealt": 6,
+      "trumpSuit": "diamonds",
+      "dealerIndex": 1,
+      "bids": [
+        { "playerId": "p1", "predicted": 2 },
+        { "playerId": "p2", "predicted": 1 },
+        { "playerId": "p3", "predicted": 3 },
+        { "playerId": "p4", "predicted": 1 }
+      ],
+      "results": [
+        { "playerId": "p1", "predicted": 2, "actual": 1, "matched": false },
+        { "playerId": "p2", "predicted": 1, "actual": 1, "matched": true },
+        { "playerId": "p3", "predicted": 3, "actual": 3, "matched": true },
+        { "playerId": "p4", "predicted": 1, "actual": 1, "matched": true }
+      ],
+      "scores": [
+        { "playerId": "p1", "roundScore": 0, "cumulativeScore": 13 },
+        { "playerId": "p2", "roundScore": 11, "cumulativeScore": 23 },
+        { "playerId": "p3", "roundScore": 13, "cumulativeScore": 13 },
+        { "playerId": "p4", "roundScore": 11, "cumulativeScore": 21 }
+      ]
+    },
+    {
+      "number": 3,
+      "status": "completed",
+      "cardsDealt": 5,
+      "trumpSuit": "clubs",
+      "dealerIndex": 2,
+      "bids": [
+        { "playerId": "p1", "predicted": 4 },
+        { "playerId": "p2", "predicted": 0 },
+        { "playerId": "p3", "predicted": 1 },
+        { "playerId": "p4", "predicted": 1 }
+      ],
+      "results": [
+        { "playerId": "p1", "predicted": 4, "actual": 4, "matched": true },
+        { "playerId": "p2", "predicted": 0, "actual": 0, "matched": true },
+        { "playerId": "p3", "predicted": 1, "actual": 0, "matched": false },
+        { "playerId": "p4", "predicted": 1, "actual": 1, "matched": true }
+      ],
+      "scores": [
+        { "playerId": "p1", "roundScore": 14, "cumulativeScore": 27 },
+        { "playerId": "p2", "roundScore": 10, "cumulativeScore": 33 },
+        { "playerId": "p3", "roundScore": 0, "cumulativeScore": 13 },
+        { "playerId": "p4", "roundScore": 11, "cumulativeScore": 32 }
+      ]
+    }
+  ],
+  
+  "stats": {
+    "totalRoundsPlayed": 3,
+    "currentLeader": "p2",
+    "mostAccuratePlayer": "p2",
+    "highestRoundScore": {
+      "playerId": "p1",
+      "round": 3,
+      "score": 14
+    },
+    "bidAccuracyRate": 66.67,
+    "averageScorePerRound": 9.17
+  }
+}
+```
+
+---
+
+## LocalStorage Keys
+
+```typescript
+// Active game
+const ACTIVE_GAME_KEY = "kachuful_active_game";
+
+// Game history
+const GAME_HISTORY_KEY = "kachuful_game_history";
+
+// User preferences
+const PREFERENCES_KEY = "kachuful_preferences";
+```
+
+---
+
+## State Management Operations
+
+### Initialize New Game
+
+```typescript
+function initializeGame(
+  playerNames: string[],
+  settings: Partial<GameSettings> = {}
+): GameState {
+  const defaultSettings: GameSettings = {
+    scoringVariant: "10_plus_predicted",
+    startingCards: 7,
+    totalRounds: 13,
+    roundPattern: "down_up",
+    trumpPattern: "rotating",
+    dealerRestriction: true,
+    ...settings
+  };
+
+  const players: Player[] = playerNames.map((name, index) => ({
+    id: generateUUID(),
+    name,
+    position: index,
+    totalScore: 0,
+    stats: {
+      roundsPlayed: 0,
+      successfulBids: 0,
+      failedBids: 0,
+      totalTricksWon: 0,
+      zeroBidsWon: 0,
+      maxRoundScore: 0,
+      averageScore: 0
+    }
+  }));
+
+  return {
+    gameId: generateUUID(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    status: "in_progress",
+    settings: defaultSettings,
+    players,
+    currentRound: 1,
+    dealerIndex: 0,
+    rounds: []
+  };
+}
+```
+
+### Submit Bids
+
+```typescript
+function submitBids(
+  state: GameState,
+  bids: PlayerBid[]
+): GameState {
+  const currentRound = state.rounds[state.currentRound - 1] || {
+    number: state.currentRound,
+    status: "bidding",
+    cardsDealt: getCardsDealt(state.currentRound, state.settings),
+    trumpSuit: getTrumpSuit(state.currentRound),
+    dealerIndex: state.dealerIndex,
+    bids: [],
+    results: [],
+    scores: []
+  };
+
+  currentRound.bids = bids;
+  currentRound.status = "playing";
+
+  return {
+    ...state,
+    rounds: [...state.rounds.slice(0, state.currentRound - 1), currentRound],
+    updatedAt: new Date().toISOString()
+  };
+}
+```
+
+### Submit Results
+
+```typescript
+function submitResults(
+  state: GameState,
+  results: PlayerResult[]
+): GameState {
+  const round = state.rounds[state.currentRound - 1];
+  
+  // Calculate scores
+  const scores: PlayerScore[] = results.map(result => {
+    const player = state.players.find(p => p.id === result.playerId)!;
+    const roundScore = calculateScore(
+      result.predicted,
+      result.actual,
+      state.settings.scoringVariant
+    );
+    const cumulativeScore = player.totalScore + roundScore;
+    
+    return {
+      playerId: result.playerId,
+      roundScore,
+      cumulativeScore
+    };
+  });
+
+  // Update round
+  round.results = results;
+  round.scores = scores;
+  round.status = "completed";
+
+  // Update player totals
+  const updatedPlayers = state.players.map(player => {
+    const score = scores.find(s => s.playerId === player.id)!;
+    const result = results.find(r => r.playerId === player.id)!;
+    
+    return {
+      ...player,
+      totalScore: score.cumulativeScore,
+      stats: updatePlayerStats(player.stats, result, score.roundScore)
+    };
+  });
+
+  return {
+    ...state,
+    players: updatedPlayers,
+    rounds: [...state.rounds.slice(0, state.currentRound - 1), round],
+    updatedAt: new Date().toISOString()
+  };
+}
+```
+
+### Advance to Next Round
+
+```typescript
+function nextRound(state: GameState): GameState {
+  const nextRoundNumber = state.currentRound + 1;
+  const nextDealerIndex = (state.dealerIndex + 1) % state.players.length;
+
+  return {
+    ...state,
+    currentRound: nextRoundNumber,
+    dealerIndex: nextDealerIndex,
+    status: nextRoundNumber > state.settings.totalRounds 
+      ? "completed" 
+      : "in_progress",
+    updatedAt: new Date().toISOString()
+  };
+}
+```
+
+---
+
+## Validation Helpers
+
+```typescript
+function validateGameState(state: GameState): boolean {
+  // Check required fields
+  if (!state.gameId || !state.players.length) return false;
+  
+  // Check player count (2-10)
+  if (state.players.length < 2 || state.players.length > 10) return false;
+  
+  // Check round consistency
+  if (state.currentRound < 1 || state.currentRound > state.settings.totalRounds) {
+    return false;
+  }
+  
+  // Check dealer index
+  if (state.dealerIndex < 0 || state.dealerIndex >= state.players.length) {
+    return false;
+  }
+  
+  return true;
+}
+```
+
+---
+
+## Migration Guide
+
+### Version 1.0 → 1.1 (Future)
+
+```typescript
+function migrateV1toV1_1(oldState: any): GameState {
+  // Add default values for new fields
+  return {
+    ...oldState,
+    settings: {
+      ...oldState.settings,
+      // New field example
+      customRules: oldState.settings.customRules || []
+    }
+  };
+}
+```
+
+---
+
+## IndexedDB Schema (Future - Phase 2)
+
+```typescript
+// Database name and version
+const DB_NAME = "KachufulDB";
+const DB_VERSION = 1;
+
+// Object stores
+interface KachufulDB {
+  games: GameState;        // Completed games
+  activeGame: GameState;   // Current game
+  players: PlayerProfile;  // Player profiles (Phase 2)
+}
+
+// Indexes
+// games: by createdAt, by status, by players
+// players: by name, by totalGames
+```
+
+---
+
+## TypeScript Utility Types
+
+```typescript
+// Partial update helpers
+type PartialGameState = Partial<GameState>;
+type PartialPlayer = Partial<Player>;
+
+// Round creation helper
+type NewRound = Omit<Round, "results" | "scores">;
+
+// Read-only views
+type ReadonlyGameState = Readonly<GameState>;
+type ReadonlyRound = Readonly<Round>;
+```
+
+---
+
+## Example Usage in React
+
+```typescript
+// Context/Zustand store
+interface GameStore {
+  game: GameState | null;
+  
+  // Actions
+  initGame: (players: string[], settings?: Partial<GameSettings>) => void;
+  submitBids: (bids: PlayerBid[]) => void;
+  submitResults: (results: PlayerResult[]) => void;
+  nextRound: () => void;
+  endGame: () => void;
+  
+  // Selectors
+  getCurrentRound: () => Round | undefined;
+  getLeader: () => Player | undefined;
+  isGameComplete: () => boolean;
+}
+```
+
+---
+
+## Data Persistence Flow
+
+```
+User Action
+    ↓
+State Update (Reducer/Zustand)
+    ↓
+Validate New State
+    ↓
+Save to LocalStorage
+    ↓
+Update UI
+```
+
+---
+
+## Notes
+
+- All timestamps in **ISO 8601** format
+- All IDs are **UUIDs** (use crypto.randomUUID() or uuid library)
+- Scores are always **integers** (no decimals)
+- Player positions are **0-indexed**
+- Round numbers are **1-indexed**
+- All arrays preserve insertion order
