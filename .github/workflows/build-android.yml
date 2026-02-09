@@ -38,8 +38,24 @@ jobs:
       - name: Build web app
         run: npm run build
 
+      - name: Verify dist folder
+        run: |
+          echo "=== dist folder contents ==="
+          ls -la dist/ || echo "dist folder not found!"
+          echo ""
+          echo "=== dist/assets folder ==="
+          ls -la dist/assets/ || echo "No assets folder"
+
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Verify web assets in Android
+        run: |
+          echo "=== Android public assets ==="
+          ls -la android/app/src/main/assets/public/ || echo "public folder not found!"
+          echo ""
+          echo "=== Android public/assets ==="
+          ls -la android/app/src/main/assets/public/assets/ || echo "No assets in public folder"
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
