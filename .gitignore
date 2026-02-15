@@ -47,3 +47,7 @@ ios/capacitor.config.json
 kachuful-mobile/node_modules/
 kachuful-mobile/.expo/
 kachuful-mobile/dist/
+
+# Android
+release.jks
+
