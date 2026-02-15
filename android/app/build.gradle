@@ -20,7 +20,7 @@ android {
         release {
             if (System.getenv("ANDROID_KEYSTORE_BASE64")) {
                 def keystoreFile = file("release.jks")
-                keystoreFile.bytes = System.getenv("ANDROID_KEYSTORE_BASE64").replaceAll("\\s", "").decodeBase64()
+                keystoreFile.bytes = java.util.Base64.getMimeDecoder().decode(System.getenv("ANDROID_KEYSTORE_BASE64"))
                 storeFile keystoreFile
                 storePassword System.getenv("ANDROID_STORE_PASSWORD")
                 keyAlias System.getenv("ANDROID_KEY_ALIAS")
