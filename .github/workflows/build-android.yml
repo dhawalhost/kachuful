@@ -93,7 +93,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: kachuful-release
-          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          path: android/app/build/outputs/apk/release/app-release*.apk
           retention-days: 30
 
       - name: Build Android Bundle
@@ -140,7 +140,11 @@ jobs:
       - name: Rename APKs and Bundle
         run: |
           mv app-debug.apk kachuful-${{ github.ref_name }}-debug.apk
-          mv app-release-unsigned.apk kachuful-${{ github.ref_name }}-release.apk
+          if [ -f app-release.apk ]; then
+            mv app-release.apk kachuful-${{ github.ref_name }}-release.apk
+          else
+            mv app-release-unsigned.apk kachuful-${{ github.ref_name }}-release.apk
+          fi
           mv app-release.aab kachuful-${{ github.ref_name }}-bundle.aab
 
       - name: Create GitHub Release
