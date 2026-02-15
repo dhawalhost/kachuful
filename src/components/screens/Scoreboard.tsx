@@ -142,23 +142,27 @@ export default function Scoreboard() {
                     />
                 </div>
 
-                {/* Charts Section - Stack on mobile */}
-                <div className="grid grid-cols-1 gap-4 mb-4 md:mb-6">
+                {/* Charts Section - Stack on mobile, Side-by-side on desktop */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 md:mb-6">
                     {/* Score Progression Chart */}
                     {scoreChartData.length > 0 && (
-                        <ScoreChart
-                            data={scoreChartData}
-                            players={playerData}
-                            title="📈 Score Progression"
-                        />
+                        <div className="h-full">
+                            <ScoreChart
+                                data={scoreChartData}
+                                players={playerData}
+                                title="📈 Score Progression"
+                            />
+                        </div>
                     )}
 
                     {/* Round Performance Chart */}
                     {performanceData.length > 0 && (
-                        <RoundPerformanceChart
-                            data={performanceData}
-                            title="🎯 Round Performance (Predicted vs Actual)"
-                        />
+                        <div className="h-full">
+                            <RoundPerformanceChart
+                                data={performanceData}
+                                title="🎯 Round Performance"
+                            />
+                        </div>
                     )}
                 </div>
 

@@ -69,7 +69,7 @@ export default function TricksEntry() {
 
     return (
         <div className="min-h-screen bg-gray-900 p-4">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-6xl mx-auto">
                 {/* Exit button - top right */}
                 <div className="flex justify-end mb-2">
                     <ExitGameButton onPress={() => setShowExitDialog(true)} />
@@ -83,7 +83,7 @@ export default function TricksEntry() {
                 </div>
 
                 <div className="card animate-slide-up">
-                    <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 md:mb-6">
                         {game.players.map(player => {
                             const bid = currentRound.bids.find(b => b.playerId === player.id)!;
                             const tricksWon = tricks.get(player.id) || 0;
@@ -107,7 +107,7 @@ export default function TricksEntry() {
                                         )}
                                     </div>
 
-                                    <div className="grid grid-cols-6 md:grid-cols-8 gap-1 md:gap-2">
+                                    <div className="grid grid-cols-6 gap-1 md:gap-2">
                                         {Array.from({ length: cardsDealt + 1 }, (_, i) => i).map(num => (
                                             <button
                                                 key={num}
