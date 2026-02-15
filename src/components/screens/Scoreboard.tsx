@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../../store/gameStore';
-import { Trophy, Target, TrendingUp, Zap } from 'lucide-react';
+import { Trophy, Target, TrendingUp, Zap, LogOut, Play } from 'lucide-react';
 import ScoreChart, { getPlayerColor } from '../charts/ScoreChart';
 import RoundPerformanceChart from '../charts/RoundPerformanceChart';
 import StatCard from '../ui/StatCard';
-import { ExitGameDialog, ExitGameButton } from '../ui/ExitGameDialog';
+import { ExitGameDialog } from '../ui/ExitGameDialog';
+import { useHaptics } from '../../hooks/useHaptics';
+import TopAppBar from '../layout/TopAppBar';
+import BottomActionBar from '../layout/BottomActionBar';
 
 export default function Scoreboard() {
     const navigate = useNavigate();
     const game = useGameStore(state => state.game);
     const nextRound = useGameStore(state => state.nextRound);
     const getLeader = useGameStore(state => state.getLeader);
+    const { impactMedium } = useHaptics();
 
     const [showExitDialog, setShowExitDialog] = useState(false);
 
@@ -62,6 +66,7 @@ export default function Scoreboard() {
     };
 
     const handleNext = () => {
+        impactMedium();
         // Check if this is the final round BEFORE incrementing
         const isFinalRound = game.currentRound >= game.settings.totalRounds;
 
@@ -80,19 +85,26 @@ export default function Scoreboard() {
         color: getPlayerColor(index),
     }));
 
-    return (
-        <div className="min-h-screen bg-gray-900 p-4">
-            <div className="max-w-6xl mx-auto">
-                {/* Exit button - top right */}
-                <div className="flex justify-end mb-2">
-                    <ExitGameButton onPress={() => setShowExitDialog(true)} />
-                </div>
+    const isFinalRound = game.currentRound >= game.settings.totalRounds;
 
-                {/* Header */}
-                <div className="text-center mb-4 md:mb-6 animate-fade-in">
-                    <h2 className="text-xl md:text-3xl font-bold mb-1 md:mb-2">
-                        Round {game.currentRound} of {game.settings.totalRounds} Complete
-                    </h2>
+    return (
+        <div className="min-h-screen bg-gray-900 page-enter">
+            <TopAppBar
+                title="Round Complete"
+                subtitle={`Round ${game.currentRound} of ${game.settings.totalRounds}`}
+                actions={
+                    <button
+                        onClick={() => setShowExitDialog(true)}
+                        className="p-2 rounded-full hover:bg-white/10 text-red-400"
+                    >
+                        <LogOut className="w-5 h-5" />
+                    </button>
+                }
+            />
+
+            <div className="pt-20 pb-28 px-4 max-w-6xl mx-auto">
+                {/* Header Progress */}
+                <div className="text-center mb-6 animate-fade-in">
                     <div className="h-1.5 md:h-2 bg-gray-700 rounded-full max-w-md mx-auto overflow-hidden">
                         <div
                             className="h-full bg-gradient-primary transition-all duration-500"
@@ -243,22 +255,31 @@ export default function Scoreboard() {
                     </div>
                 </div>
 
-                {/* Next Round Button */}
-                <button
-                    onClick={handleNext}
-                    className="btn-primary w-full max-w-md mx-auto block text-lg py-4"
-                >
-                    {game.currentRound >= game.settings.totalRounds
-                        ? '🏆 VIEW FINAL RESULTS'
-                        : `▶️ NEXT ROUND (${game.currentRound + 1})`}
-                </button>
-
                 {/* Exit Game Dialog */}
                 <ExitGameDialog
                     isOpen={showExitDialog}
                     onClose={() => setShowExitDialog(false)}
                 />
             </div>
+
+            <BottomActionBar>
+                <button
+                    onClick={handleNext}
+                    className="btn-primary w-full py-4 text-lg font-bold flex items-center justify-center gap-3 shadow-xl"
+                >
+                    {isFinalRound ? (
+                        <>
+                            <Trophy className="w-6 h-6" />
+                            VIEW FINAL RESULTS
+                        </>
+                    ) : (
+                        <>
+                            <Play className="w-6 h-6" fill="currentColor" />
+                            NEXT ROUND ({game.currentRound + 1})
+                        </>
+                    )}
+                </button>
+            </BottomActionBar>
         </div>
     );
 }

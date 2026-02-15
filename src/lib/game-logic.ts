@@ -84,8 +84,9 @@ export function validateBids(
 // ============================================
 
 export function getTrumpSuit(roundNumber: number): TrumpSuit {
-    const trumpCycle: TrumpSuit[] = ['spades', 'diamonds', 'clubs', 'hearts', 'none'];
-    const index = (roundNumber - 1) % 5;
+    // Only cycle through the 4 suits, creating a repeating pattern
+    const trumpCycle: TrumpSuit[] = ['spades', 'diamonds', 'clubs', 'hearts'];
+    const index = (roundNumber - 1) % 4;
     return trumpCycle[index];
 }
 
@@ -97,21 +98,25 @@ export function getCardsDealt(
     roundNumber: number,
     settings: GameSettings
 ): number {
-    const { startingCards, totalRounds, roundPattern } = settings;
+    const { startingCards, totalRounds, roundPattern, originalTotalRounds } = settings;
+    const cycleLength = originalTotalRounds || totalRounds;
+
+    // Calculate effective round number within the cycle (1-based)
+    const effectiveRound = ((roundNumber - 1) % cycleLength) + 1;
 
     if (roundPattern === 'down_only') {
-        return Math.max(1, startingCards - (roundNumber - 1));
+        return Math.max(1, startingCards - (effectiveRound - 1));
     }
 
     // down_up pattern
-    const midPoint = Math.ceil(totalRounds / 2);
+    const midPoint = Math.ceil(cycleLength / 2);
 
-    if (roundNumber <= midPoint) {
+    if (effectiveRound <= midPoint) {
         // Descending phase
-        return startingCards - (roundNumber - 1);
+        return startingCards - (effectiveRound - 1);
     } else {
         // Ascending phase
-        const roundsFromMid = roundNumber - midPoint;
+        const roundsFromMid = effectiveRound - midPoint;
         return 1 + roundsFromMid;
     }
 }

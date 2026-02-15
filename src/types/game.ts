@@ -28,6 +28,7 @@ export interface GameSettings {
     roundPattern: RoundPattern;  // "down_up" | "down_only"
     trumpPattern: TrumpPattern;  // "rotating" | "fixed" | "random"
     dealerRestriction: boolean;  // Default: true
+    originalTotalRounds?: number; // For game extension logic
 }
 
 // ============================================

@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../../store/gameStore';
-import { getSuitSymbol, getSuitColorClass, validateBids, getBiddingOrder, getCardsDealt, getTrumpSuit } from '../../lib/game-logic';
+import { getSuitColorClass, validateBids, getBiddingOrder, getCardsDealt, getTrumpSuit } from '../../lib/game-logic';
 import type { PlayerBid } from '../../types/game';
-import { X, Sparkles, Check, ChevronRight, Crown } from 'lucide-react';
-import { ExitGameDialog, ExitGameButton } from '../ui/ExitGameDialog';
+import { X, Check, ChevronRight, Crown, LogOut } from 'lucide-react';
+import { ExitGameDialog } from '../ui/ExitGameDialog';
+import { useHaptics } from '../../hooks/useHaptics';
+import TopAppBar from '../layout/TopAppBar';
+import BottomActionBar from '../layout/BottomActionBar';
+import SuitIcon from '../ui/SuitIcon';
 
 interface BidDialogProps {
     playerName: string;
@@ -16,9 +20,10 @@ interface BidDialogProps {
 }
 
 function BidDialog({ playerName, maxBid, invalidBids, isDealer, onSelect, onClose }: BidDialogProps) {
+    const { impactLight } = useHaptics();
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-            <div className="card w-full max-w-sm animate-bounce-in border-purple-500/30">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+            <div className="card w-full max-w-sm animate-bounce-in border-purple-500/30 bg-gray-900">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-2">
@@ -45,13 +50,18 @@ function BidDialog({ playerName, maxBid, invalidBids, isDealer, onSelect, onClos
                 )}
 
                 {/* Bid buttons grid */}
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-4 gap-3 max-h-[50vh] overflow-y-auto pr-1">
                     {Array.from({ length: maxBid + 1 }, (_, i) => i).map(num => {
                         const isInvalid = invalidBids.includes(num);
                         return (
                             <button
                                 key={num}
-                                onClick={() => !isInvalid && onSelect(num)}
+                                onClick={() => {
+                                    if (!isInvalid) {
+                                        impactLight();
+                                        onSelect(num);
+                                    }
+                                }}
                                 disabled={isInvalid}
                                 className={`
                                     relative h-14 rounded-xl font-bold text-xl transition-all duration-300
@@ -74,6 +84,7 @@ export default function BiddingScreen() {
     const navigate = useNavigate();
     const game = useGameStore(state => state.game);
     const submitBids = useGameStore(state => state.submitBids);
+    const { impactLight, impactMedium } = useHaptics();
 
     const [bids, setBids] = useState<Map<string, number>>(new Map());
     const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
@@ -148,6 +159,7 @@ export default function BiddingScreen() {
     };
 
     const handlePlayerClick = (playerId: string) => {
+        impactLight();
         const hasBid = bids.has(playerId);
         const isNextToBid = playerId === nextPlayerToBid;
 
@@ -179,6 +191,7 @@ export default function BiddingScreen() {
             return;
         }
 
+        impactMedium();
         submitBids(bidArray);
         navigate('/tricks');
     };
@@ -188,37 +201,40 @@ export default function BiddingScreen() {
     const progress = (bids.size / game.players.length) * 100;
 
     return (
-        <div className="min-h-screen p-4 safe-bottom">
-            <div className="max-w-lg mx-auto">
-                {/* Exit button - top right */}
-                <div className="flex justify-end mb-2">
-                    <ExitGameButton onPress={() => setShowExitDialog(true)} />
-                </div>
+        <div className="min-h-screen bg-gray-900 text-gray-100 page-enter">
+            <TopAppBar
+                title={`Round ${game.currentRound}`}
+                subtitle={`of ${game.settings.totalRounds}`}
+                actions={
+                    <button
+                        onClick={() => setShowExitDialog(true)}
+                        className="p-2 rounded-full hover:bg-white/10 text-red-400"
+                    >
+                        <LogOut className="w-5 h-5" />
+                    </button>
+                }
+            />
 
+            <div className="pt-20 pb-28 px-4 max-w-md mx-auto relative h-full flex flex-col">
                 {/* Header - Round info */}
                 <div className="text-center mb-6 animate-fade-in">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-3">
-                        <Sparkles className="w-4 h-4 text-purple-400" />
-                        <span className="text-sm font-medium">Round {game.currentRound} of {game.settings.totalRounds}</span>
-                    </div>
-
                     {/* Cards & Trump display */}
                     <div className="flex justify-center items-center gap-6 mb-2">
-                        <div className="text-center">
+                        <div className="text-center card p-3 min-w-[80px]">
                             <div className="text-3xl font-black text-gradient-primary">{cardsDealt}</div>
                             <div className="text-xs text-gray-400 uppercase tracking-wide">Cards</div>
                         </div>
-                        <div className="h-10 w-px bg-gray-700" />
-                        <div className="text-center">
-                            <div className={`text-3xl ${getSuitColorClass(trumpSuit)} text-glow`}>
-                                {getSuitSymbol(trumpSuit)}
+
+                        <div className="text-center card p-3 min-w-[80px]">
+                            <div className={`flex items-center justify-center h-9 ${getSuitColorClass(trumpSuit)} text-glow`}>
+                                <SuitIcon suit={trumpSuit} className="w-8 h-8 md:w-9 md:h-9" />
                             </div>
                             <div className="text-xs text-gray-400 uppercase tracking-wide">Trump</div>
                         </div>
                     </div>
 
-                    <div className="text-sm text-gray-400">
-                        <Crown className="w-4 h-4 inline text-yellow-400 mr-1" />
+                    <div className="text-sm text-gray-400 bg-gray-800/50 inline-block px-3 py-1 rounded-full">
+                        <Crown className="w-3 h-3 inline text-yellow-400 mr-1" />
                         Dealer: <span className="text-purple-400 font-semibold">{dealer.name}</span>
                     </div>
                 </div>
@@ -251,7 +267,7 @@ export default function BiddingScreen() {
                                 disabled={!canClick}
                                 className={`
                                     w-full player-card flex items-center justify-between animate-slide-up
-                                    ${isNext ? 'active animate-pulse-glow' : ''}
+                                    ${isNext ? 'active animate-pulse-glow border-purple-500/50' : ''}
                                     ${hasBid ? 'opacity-90' : !canClick ? 'opacity-40' : ''}
                                 `}
                                 style={{ animationDelay: `${i * 0.05}s` }}
@@ -259,7 +275,7 @@ export default function BiddingScreen() {
                                 <div className="flex items-center gap-3">
                                     {/* Status indicator */}
                                     <div className={`
-                                        w-10 h-10 rounded-xl flex items-center justify-center text-lg
+                                        w-10 h-10 rounded-xl flex items-center justify-center text-lg transition-colors duration-300
                                         ${hasBid
                                             ? 'bg-green-500/20 border border-green-500/50'
                                             : isNext
@@ -299,20 +315,9 @@ export default function BiddingScreen() {
                     })}
                 </div>
 
-                {/* Submit Button */}
-                {allBidsComplete && (
-                    <button
-                        onClick={handleSubmit}
-                        className="btn-primary w-full py-5 text-lg font-black flex items-center justify-center gap-3 animate-bounce-in"
-                    >
-                        <Check className="w-6 h-6" />
-                        CONFIRM ALL BIDS
-                    </button>
-                )}
-
                 {/* Error */}
                 {error && (
-                    <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/50 animate-bounce-in">
+                    <div className="mb-4 p-4 rounded-xl bg-red-500/10 border border-red-500/50 animate-bounce-in">
                         <div className="flex items-center gap-3">
                             <span className="text-2xl">❌</span>
                             <span className="text-red-400">{error}</span>
@@ -320,6 +325,22 @@ export default function BiddingScreen() {
                     </div>
                 )}
             </div>
+
+            <BottomActionBar>
+                <button
+                    onClick={handleSubmit}
+                    disabled={!allBidsComplete}
+                    className={`
+                        w-full py-4 text-lg font-bold flex items-center justify-center gap-3 shadow-xl transition-all duration-300 rounded-2xl
+                        ${allBidsComplete
+                            ? 'btn-primary'
+                            : 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700'}
+                    `}
+                >
+                    <Check className="w-6 h-6" />
+                    {allBidsComplete ? 'CONFIRM BIDS' : 'Waiting for bids...'}
+                </button>
+            </BottomActionBar>
 
             {/* Bid Selection Dialog */}
             {selectedPlayer && (

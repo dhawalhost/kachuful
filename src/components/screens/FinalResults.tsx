@@ -1,11 +1,16 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../../store/gameStore';
 import { useHistoryStore } from '../../store/historyStore';
 import { Trophy, RotateCcw, Home, Target, TrendingUp, Zap, Award, Crown, Sparkles, Plus } from 'lucide-react';
 import ScoreChart, { getPlayerColor } from '../charts/ScoreChart';
+import { useHaptics } from '../../hooks/useHaptics';
+import ContinueDialog from '../ui/ContinueDialog';
+import TopAppBar from '../layout/TopAppBar';
+import BottomActionBar from '../layout/BottomActionBar';
 
 export default function FinalResults() {
+    const [showContinueDialog, setShowContinueDialog] = useState(false);
     const navigate = useNavigate();
     const game = useGameStore(state => state.game);
     const resetGame = useGameStore(state => state.resetGame);
@@ -13,6 +18,7 @@ export default function FinalResults() {
     const continueGame = useGameStore(state => state.continueGame);
     const nextRound = useGameStore(state => state.nextRound);
     const addGameToHistory = useHistoryStore(state => state.addGame);
+    const { impactLight, impactMedium } = useHaptics();
 
     // Track if we've already saved this game to history
     const savedToHistoryRef = useRef<string | null>(null);
@@ -63,6 +69,7 @@ export default function FinalResults() {
     const totalSuccessfulBids = sortedPlayers.reduce((sum, p) => sum + p.stats.successfulBids, 0);
 
     const handlePlayAgain = () => {
+        impactLight();
         const playerNames = game.players.map(p => p.name);
         const settings = game.settings;
         resetGame();
@@ -71,19 +78,38 @@ export default function FinalResults() {
     };
 
     const handleNewGame = () => {
+        impactLight();
         resetGame();
         navigate('/');
     };
 
     const handleContinue = () => {
-        continueGame(5);
+        impactMedium();
+        setShowContinueDialog(true);
+    };
+
+    const handleConfirmContinue = (rounds: number, cards: number, pattern: 'down_up' | 'down_only') => {
+        continueGame(rounds, cards, pattern);
         nextRound();
         navigate('/bidding');
     };
 
     return (
-        <div className="min-h-screen p-4 safe-bottom">
-            <div className="max-w-lg mx-auto">
+        <div className="min-h-screen bg-gray-900 page-enter">
+            <TopAppBar
+                title="Final Results"
+                subtitle="Game Completed"
+                actions={
+                    <button
+                        onClick={handleNewGame}
+                        className="p-2 rounded-full hover:bg-white/10"
+                    >
+                        <Home className="w-5 h-5" />
+                    </button>
+                }
+            />
+
+            <div className="pt-20 pb-28 px-4 max-w-lg mx-auto">
                 {/* Winner Announcement - Premium celebration */}
                 <div className="text-center mb-6 animate-bounce-in">
                     {/* Celebration particles */}
@@ -204,36 +230,42 @@ export default function FinalResults() {
                     </div>
                 </div>
 
-                {/* Action Buttons - Premium style */}
-                <div className="space-y-3 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-                    {/* Continue playing - Hero button */}
+                {/* Secondary actions */}
+                <div className="grid grid-cols-2 gap-3 mb-4 animate-slide-up">
                     <button
-                        onClick={handleContinue}
-                        className="btn-primary w-full py-5 text-lg font-black flex items-center justify-center gap-3"
+                        onClick={handlePlayAgain}
+                        className="btn-secondary py-4 flex items-center justify-center gap-2"
                     >
-                        <Plus className="w-6 h-6" />
-                        Continue (+5 Rounds)
+                        <RotateCcw className="w-5 h-5" />
+                        <span>Rematch</span>
                     </button>
-
-                    {/* Secondary actions */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <button
-                            onClick={handlePlayAgain}
-                            className="btn-secondary py-4 flex items-center justify-center gap-2"
-                        >
-                            <RotateCcw className="w-5 h-5" />
-                            <span>Rematch</span>
-                        </button>
-                        <button
-                            onClick={handleNewGame}
-                            className="btn-secondary py-4 flex items-center justify-center gap-2"
-                        >
-                            <Home className="w-5 h-5" />
-                            <span>New Game</span>
-                        </button>
-                    </div>
+                    <button
+                        onClick={handleNewGame}
+                        className="btn-secondary py-4 flex items-center justify-center gap-2"
+                    >
+                        <Home className="w-5 h-5" />
+                        <span>New Game</span>
+                    </button>
                 </div>
             </div>
+
+            <BottomActionBar>
+                <button
+                    onClick={handleContinue}
+                    className="btn-primary w-full py-4 text-lg font-black flex items-center justify-center gap-3 shadow-xl"
+                >
+                    <Plus className="w-6 h-6" />
+                    Continue Game
+                </button>
+            </BottomActionBar>
+
+            <ContinueDialog
+                isOpen={showContinueDialog}
+                onClose={() => setShowContinueDialog(false)}
+                onConfirm={handleConfirmContinue}
+                initialCards={game.settings.startingCards}
+                initialRounds={game.settings.originalTotalRounds || game.settings.totalRounds}
+            />
         </div>
     );
 }

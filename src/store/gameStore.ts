@@ -28,7 +28,7 @@ interface GameStore {
     nextRound: () => void;
     endGame: () => void;
     resetGame: () => void;
-    continueGame: (additionalRounds: number) => void;
+    continueGame: (rounds: number, cards: number, pattern: 'down_up' | 'down_only') => void;
 
     // Selectors
     getCurrentRound: () => Round | undefined;
@@ -80,6 +80,7 @@ export const useGameStore = create<GameStore>()(
                 const finalSettings: GameSettings = {
                     ...getDefaultSettings(),
                     ...settings,
+                    originalTotalRounds: settings?.totalRounds || getDefaultSettings().totalRounds,
                 };
 
                 const players: Player[] = playerNames.map((name, index) => ({
@@ -228,7 +229,7 @@ export const useGameStore = create<GameStore>()(
                 });
             },
 
-            continueGame: (additionalRounds: number) => {
+            continueGame: (rounds: number, cards: number, pattern: 'down_up' | 'down_only') => {
                 const { game } = get();
                 if (!game) return;
 
@@ -237,7 +238,10 @@ export const useGameStore = create<GameStore>()(
                         ...game,
                         settings: {
                             ...game.settings,
-                            totalRounds: game.settings.totalRounds + additionalRounds,
+                            totalRounds: game.settings.totalRounds + rounds,
+                            originalTotalRounds: rounds, // Set new cycle length
+                            startingCards: cards,        // Set new starting cards
+                            roundPattern: pattern,       // Set new pattern
                         },
                         status: 'in_progress',
                         updatedAt: new Date().toISOString(),

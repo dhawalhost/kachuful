@@ -8,7 +8,35 @@ import FinalResults from './components/screens/FinalResults';
 import GameHistory from './components/screens/GameHistory';
 import './index.css';
 
+import { useEffect } from 'react';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
+import { Capacitor } from '@capacitor/core';
+
 function App() {
+  useEffect(() => {
+    // Platform-specific initialization
+    if (Capacitor.isNativePlatform()) {
+      const initNativeFeatures = async () => {
+        try {
+          // Status Bar: Transparent and Overlay
+          await StatusBar.setStyle({ style: Style.Dark });
+          if (Capacitor.getPlatform() === 'android') {
+            await StatusBar.setOverlaysWebView({ overlay: true });
+            await StatusBar.setBackgroundColor({ color: 'transparent' });
+          }
+
+          // Keyboard: Resize webview
+          await Keyboard.setResizeMode({ mode: KeyboardResize.Body });
+        } catch (e) {
+          console.error('Error initializing native features:', e);
+        }
+      };
+
+      initNativeFeatures();
+    }
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
